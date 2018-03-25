@@ -69,6 +69,8 @@ int main(void)
 			2, 3, 0
 		};
 
+
+		Renderer renderer;
 		VertexArray vao;
 		VertexBuffer vbo(positions, sizeof(positions));
 		VertexBufferLayout layout;
@@ -78,7 +80,6 @@ int main(void)
 
 		Shader shader("res/shaders/Basic.shader");
 		shader.Bind();
-
 		shader.SetUniform4f("u_Color", color[(int)rgba::RED], color[(int)rgba::GREEN], color[(int)rgba::BLUE], color[(int)rgba::ALPHA]);
 
 		float rInc = 0.03f;
@@ -95,7 +96,7 @@ int main(void)
 		while (!glfwWindowShouldClose(window))
 		{
 			/* Render here */
-			glClear(GL_COLOR_BUFFER_BIT);
+			renderer.Clear();
 
 			vao.Bind();
 			shader.Bind();
@@ -113,7 +114,7 @@ int main(void)
 
 			shader.SetUniform4f("u_Color", color[(int)rgba::RED], color[(int)rgba::GREEN], color[(int)rgba::BLUE], color[(int)rgba::ALPHA]);
 
-			GLAssertError(glDrawElements(GL_TRIANGLES, sizeof(indices), GL_UNSIGNED_INT, nullptr));
+			renderer.Draw(vao, ibo, shader);
 
 			/* Swap front and back buffers */
 			glfwSwapBuffers(window);

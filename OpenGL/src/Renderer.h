@@ -1,14 +1,13 @@
 #pragma once
-
+#include "ErrorHandler.h"
 #include <GL/glew.h>
+#include "VertexArray.h"
+#include "IndexBuffer.h"
+#include "Shader.h"
 
-#ifdef _DEBUG
-#define AssertBreak(x) if (x) __debugbreak();
-#define GLAssertError(x) GLClearError(); x; AssertBreak(GLLogError(#x, __FILE__, __LINE__));
-#else
-#define GLAssertError(x) x
-#endif
-
-void GLClearError();
-
-bool GLLogError(const char* function, const char* file, int line);
+class Renderer
+{
+public:
+	void Clear();
+	void Draw(const VertexArray& vao, const IndexBuffer& ibo, const Shader& shader) const;
+};
