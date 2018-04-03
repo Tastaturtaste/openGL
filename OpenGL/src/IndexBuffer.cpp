@@ -2,7 +2,7 @@
 #include "Renderer.h"
 
 IndexBuffer::IndexBuffer(const unsigned int* data, unsigned int count)
-	:m_Count(count)
+	: m_RendererID(0), m_Count(count)
 {
 	GLAssertError(glGenBuffers(1, &m_RendererID));
 	GLAssertError(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_RendererID));

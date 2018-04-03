@@ -1,6 +1,6 @@
 #include "ErrorHandler.h"
 #include<iostream>
-#include <GL\glew.h>
+#include <GL/glew.h>
 
 void GLClearError()
 {

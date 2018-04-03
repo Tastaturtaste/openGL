@@ -2,6 +2,7 @@
 #include "Renderer.h"
 
 VertexBuffer::VertexBuffer(const void* data, unsigned int size)
+	: m_RendererID(0)
 {
 	GLAssertError(glGenBuffers(1, &m_RendererID));
 	GLAssertError(glBindBuffer(GL_ARRAY_BUFFER, m_RendererID));

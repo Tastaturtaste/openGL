@@ -5,7 +5,6 @@
 #include <string>
 #include <fstream>
 #include <sstream>
-#include <array>
 
 #include "Renderer.h"
 #include "VertexBuffer.h"
@@ -13,6 +12,9 @@
 #include "VertexArray.h"
 #include "VertexBufferLayout.h"
 #include "Shader.h"
+#include "Texture.h"
+#include "glm\glm.hpp"
+#include "glm\gtc\matrix_transform.hpp"
 
 
 enum class rgba
@@ -34,7 +36,7 @@ int main(void)
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
 	/* Create a windowed mode window and its OpenGL context */
-	window = glfwCreateWindow(640, 480, "Hello World", NULL, NULL);
+	window = glfwCreateWindow(1920, 1080, "Hello World", NULL, NULL);
 	if (!window)
 	{
 		glfwTerminate();
@@ -50,12 +52,12 @@ int main(void)
 	
 	{
 
-		float positions[] =
+		float vertex[] =
 		{
-			-0.5f, -0.5f,
-			 0.5f, -0.5f,
-			 0.5f,	0.5f,
-			-0.5f,	0.5f
+			-0.5f, -0.5f, 0.0f, 0.0f,
+			 0.5f, -0.5f, 1.0f, 0.0f,
+			 0.5f,	0.5f, 1.0f, 1.0f,
+			-0.5f,	0.5f, 0.0f, 1.0f
 		};
 
 		float color[4] =
@@ -69,18 +71,27 @@ int main(void)
 			2, 3, 0
 		};
 
+		//GLAssertError(glEnable(GL_BLEND));
+		//GLAssertError(glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA));
+
+		glm::mat4 proj = glm::ortho(-1.0f, 1.0f, -0.75f, 0.75f, -1.0f, 1.0f);
 
 		Renderer renderer;
 		VertexArray vao;
-		VertexBuffer vbo(positions, sizeof(positions));
+		VertexBuffer vbo(vertex, sizeof(vertex));
 		VertexBufferLayout layout;
-		layout.Push<float>(2);
+		layout.Push<float>(2); // Vertex position
+		layout.Push<float>(2); // Texture position
 		vao.AddBuffer(vbo, layout);
 		IndexBuffer ibo(indices, 6);
+		Texture texture("res/textures/Fallschirmsprung28.06.16.png");
+		texture.Bind();
 
 		Shader shader("res/shaders/Basic.shader");
 		shader.Bind();
+		shader.SetUniformMat4f("u_MVP", proj);
 		shader.SetUniform4f("u_Color", color[(int)rgba::RED], color[(int)rgba::GREEN], color[(int)rgba::BLUE], color[(int)rgba::ALPHA]);
+		shader.SetUniform1i("u_Texture", 0);
 
 		float rInc = 0.03f;
 		float gInc = 0.05f;
