@@ -15,6 +15,8 @@
 #include "Texture.h"
 #include "glm\glm.hpp"
 #include "glm\gtc\matrix_transform.hpp"
+#include "imgui\imgui.h"
+#include "imgui\imgui_impl_glfw_gl3.h"
 
 
 enum class rgba
@@ -36,7 +38,7 @@ int main(void)
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
 	/* Create a windowed mode window and its OpenGL context */
-	window = glfwCreateWindow(1920, 1080, "Hello World", NULL, NULL);
+	window = glfwCreateWindow(960, 540, "Hello World", NULL, NULL);
 	if (!window)
 	{
 		glfwTerminate();
@@ -54,10 +56,10 @@ int main(void)
 
 		float vertex[] =
 		{
-			-0.5f, -0.5f, 0.0f, 0.0f,
-			 0.5f, -0.5f, 1.0f, 0.0f,
-			 0.5f,	0.5f, 1.0f, 1.0f,
-			-0.5f,	0.5f, 0.0f, 1.0f
+			 100.0f, 100.0f, 0.0f, 0.0f,
+			 200.0f, 100.0f, 1.0f, 0.0f,
+			 200.0f, 200.0f, 1.0f, 1.0f,
+			 100.0f, 200.0f, 0.0f, 1.0f
 		};
 
 		float color[4] =
@@ -74,7 +76,8 @@ int main(void)
 		//GLAssertError(glEnable(GL_BLEND));
 		//GLAssertError(glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA));
 
-		glm::mat4 proj = glm::ortho(-1.0f, 1.0f, -0.75f, 0.75f, -1.0f, 1.0f);
+		glm::mat4 proj = glm::ortho(0.0f, 960.0f, 0.0f, 540.0f, -1.0f, 1.0f);
+		glm::mat4 view = glm::translate(glm::mat4(1.0f), glm::vec3(-100, 0, 0));
 
 		Renderer renderer;
 		VertexArray vao;
@@ -84,12 +87,11 @@ int main(void)
 		layout.Push<float>(2); // Texture position
 		vao.AddBuffer(vbo, layout);
 		IndexBuffer ibo(indices, 6);
-		Texture texture("res/textures/Fallschirmsprung28.06.16.png");
+		Texture texture("res/textures/ChernoLogo.png");
 		texture.Bind();
 
 		Shader shader("res/shaders/Basic.shader");
 		shader.Bind();
-		shader.SetUniformMat4f("u_MVP", proj);
 		shader.SetUniform4f("u_Color", color[(int)rgba::RED], color[(int)rgba::GREEN], color[(int)rgba::BLUE], color[(int)rgba::ALPHA]);
 		shader.SetUniform1i("u_Texture", 0);
 
@@ -102,12 +104,19 @@ int main(void)
 		ibo.Unbind();
 		shader.Unbind();
 
+		ImGui::CreateContext();
+		ImGui_ImplGlfwGL3_Init(window, true);
+		ImGui::StyleColorsDark();
+
+		glm::vec3 translation(200, 200, 0);
 
 		/* Loop until the user closes the window */
 		while (!glfwWindowShouldClose(window))
 		{
 			/* Render here */
 			renderer.Clear();
+
+			ImGui_ImplGlfwGL3_NewFrame();
 
 			vao.Bind();
 			shader.Bind();
@@ -123,9 +132,21 @@ int main(void)
 			color[(int)rgba::GREEN] += gInc;
 			color[(int)rgba::BLUE] += bInc;
 
+			glm::mat4 model = glm::translate(glm::mat4(1.0f), translation);
+			glm::mat4 mvp = proj * view * model;
+
 			shader.SetUniform4f("u_Color", color[(int)rgba::RED], color[(int)rgba::GREEN], color[(int)rgba::BLUE], color[(int)rgba::ALPHA]);
+			shader.SetUniformMat4f("u_MVP", mvp);
 
 			renderer.Draw(vao, ibo, shader);
+
+			{
+				ImGui::SliderFloat3("Translation", &translation.x, 0.0f, 960.0f);            // Edit 1 float using a slider from 0.0f to 1.0f    
+				ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+			}
+
+			ImGui::Render();
+			ImGui_ImplGlfwGL3_RenderDrawData(ImGui::GetDrawData());
 
 			/* Swap front and back buffers */
 			glfwSwapBuffers(window);
@@ -134,6 +155,9 @@ int main(void)
 			glfwPollEvents();
 		}
 	}
+
+	ImGui_ImplGlfwGL3_Shutdown();
+	ImGui::DestroyContext();
 	glfwTerminate();
 	
 	return 0;
