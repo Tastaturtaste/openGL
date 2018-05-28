@@ -17,6 +17,7 @@
 #include "glm\gtc\matrix_transform.hpp"
 #include "imgui\imgui.h"
 #include "imgui\imgui_impl_glfw_gl3.h"
+#include "Window.h"
 
 
 enum class rgba
@@ -27,39 +28,16 @@ enum class rgba
 int main(void)
 {
 
-	GLFWwindow* window;
-
-	/* Initialize the library */
-	if (!glfwInit())
-		return -1;
-
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-
-	/* Create a windowed mode window and its OpenGL context */
-	window = glfwCreateWindow(960, 540, "Hello World", NULL, NULL);
-	if (!window)
-	{
-		glfwTerminate();
-		return -1;
-	}
-
-	/* Make the window's context current */
-	glfwMakeContextCurrent(window);
-	if (glewInit() != GLEW_OK)
-		std::cout << "Error!" << std::endl;
-
-	glfwSwapInterval(1);
+	Window window(960, 480, "OpenGL");
 	
 	{
 
 		float vertex[] =
 		{
-			 100.0f, 100.0f, 0.0f, 0.0f,
-			 200.0f, 100.0f, 1.0f, 0.0f,
-			 200.0f, 200.0f, 1.0f, 1.0f,
-			 100.0f, 200.0f, 0.0f, 1.0f
+			   0.0f,   0.0f, 0.0f, 0.0f,
+			 100.0f,   0.0f, 1.0f, 0.0f,
+			 100.0f, 100.0f, 1.0f, 1.0f,
+			   0.0f, 100.0f, 0.0f, 1.0f
 		};
 
 		float color[4] =
@@ -73,11 +51,14 @@ int main(void)
 			2, 3, 0
 		};
 
-		//GLAssertError(glEnable(GL_BLEND));
-		//GLAssertError(glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA));
+		GLAssertError(glEnable(GL_BLEND));
+		GLAssertError(glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA));
 
-		glm::mat4 proj = glm::ortho(0.0f, 960.0f, 0.0f, 540.0f, -1.0f, 1.0f);
-		glm::mat4 view = glm::translate(glm::mat4(1.0f), glm::vec3(-100, 0, 0));
+		glm::mat4 proj = glm::ortho(0.0f, static_cast<float>(window.getWidth()), 0.0f, static_cast<float>(window.getHeight()), -1.0f, 1.0f);
+		glm::mat4 view = glm::translate(glm::mat4(1.0f), glm::vec3(0, 0, 0));
+		glm::mat4 model = glm::translate(glm::mat4(1.0f), glm::vec3(0, 0, 0));
+
+		glm::mat4 mvp = proj * view * model;
 
 		Renderer renderer;
 		VertexArray vao;
@@ -105,13 +86,14 @@ int main(void)
 		shader.Unbind();
 
 		ImGui::CreateContext();
-		ImGui_ImplGlfwGL3_Init(window, true);
+		ImGui_ImplGlfwGL3_Init(window.getGLFWwindow(), true);
 		ImGui::StyleColorsDark();
 
-		glm::vec3 translation(200, 200, 0);
+		glm::vec3 translation1(200, 200, 0);
+		glm::vec3 translation2(400, 400, 0);
 
 		/* Loop until the user closes the window */
-		while (!glfwWindowShouldClose(window))
+		while (!window.closed())
 		{
 			/* Render here */
 			renderer.Clear();
@@ -132,27 +114,30 @@ int main(void)
 			color[(int)rgba::GREEN] += gInc;
 			color[(int)rgba::BLUE] += bInc;
 
-			glm::mat4 model = glm::translate(glm::mat4(1.0f), translation);
-			glm::mat4 mvp = proj * view * model;
-
 			shader.SetUniform4f("u_Color", color[(int)rgba::RED], color[(int)rgba::GREEN], color[(int)rgba::BLUE], color[(int)rgba::ALPHA]);
-			shader.SetUniformMat4f("u_MVP", mvp);
 
+			model = glm::translate(glm::mat4(1.0f), translation1);
+			mvp = proj * view * model;
+			
+			shader.SetUniformMat4f("u_MVP", mvp);
+			renderer.Draw(vao, ibo, shader);
+
+			model = glm::translate(glm::mat4(1.0f), translation2);
+			mvp = proj * view * model;
+
+			shader.SetUniformMat4f("u_MVP", mvp);
 			renderer.Draw(vao, ibo, shader);
 
 			{
-				ImGui::SliderFloat3("Translation", &translation.x, 0.0f, 960.0f);            // Edit 1 float using a slider from 0.0f to 1.0f    
+				ImGui::SliderFloat3("Translation1", &translation1.x, 0.0f, 960.0f);            // Edit 1 float using a slider from 0.0f to 1.0f    
+				ImGui::SliderFloat3("Translation2", &translation2.x, 0.0f, 960.0f);
 				ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 			}
 
 			ImGui::Render();
 			ImGui_ImplGlfwGL3_RenderDrawData(ImGui::GetDrawData());
 
-			/* Swap front and back buffers */
-			glfwSwapBuffers(window);
-
-			/* Poll for and process events */
-			glfwPollEvents();
+			window.update();
 		}
 	}
 
